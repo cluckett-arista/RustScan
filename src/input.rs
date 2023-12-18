@@ -182,7 +182,7 @@ impl Opts {
 
         merge_required!(
             addresses, greppable, accessible, batch_size, timeout, tries, scan_order, scripts,
-            command
+            command, is_udp_port
         );
     }
 
