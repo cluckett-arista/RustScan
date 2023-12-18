@@ -140,6 +140,9 @@ pub struct Opts {
     /// For things like --script '(safe and vuln)' enclose it in quotations marks \"'(safe and vuln)'\"")
     #[structopt(last = true)]
     pub command: Vec<String>,
+
+    #[structopt(short, long)]
+    pub is_udp_port: bool,
 }
 
 #[cfg(not(tarpaulin_include))]
@@ -225,6 +228,7 @@ pub struct Config {
     scan_order: Option<ScanOrder>,
     command: Option<Vec<String>>,
     scripts: Option<ScriptsRequired>,
+    is_udp_port: Option<bool>,
 }
 
 #[cfg(not(tarpaulin_include))]
@@ -288,6 +292,7 @@ mod tests {
                 accessible: Some(true),
                 scan_order: Some(ScanOrder::Random),
                 scripts: None,
+                is_udp_port: Some(false),
             }
         }
     }
@@ -310,6 +315,7 @@ mod tests {
                 top: false,
                 scripts: ScriptsRequired::Default,
                 config_path: None,
+                is_udp_port: false,
             }
         }
     }
@@ -327,6 +333,7 @@ mod tests {
         assert_eq!(opts.timeout, 0);
         assert_eq!(opts.command, vec![] as Vec<String>);
         assert_eq!(opts.scan_order, ScanOrder::Serial);
+        assert_eq!(opts.is_udp_port, false);
     }
 
     #[test]
@@ -343,6 +350,7 @@ mod tests {
         assert_eq!(opts.accessible, config.accessible.unwrap());
         assert_eq!(opts.scan_order, config.scan_order.unwrap());
         assert_eq!(opts.scripts, ScriptsRequired::Default);
+        assert_eq!(opts.is_udp_port, config.is_udp_port.unwrap());
     }
 
     #[test]

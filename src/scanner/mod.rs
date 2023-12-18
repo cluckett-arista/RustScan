@@ -1,10 +1,11 @@
 use super::PortStrategy;
 
 mod socket_iterator;
+use futures::future::Either;
 use socket_iterator::SocketIterator;
 
 use async_std::io;
-use async_std::net::TcpStream;
+use async_std::net::{TcpStream, UdpSocket};
 use async_std::prelude::*;
 use colored::Colorize;
 use futures::stream::FuturesUnordered;
@@ -14,6 +15,7 @@ use std::{
     num::NonZeroU8,
     time::Duration,
 };
+use Either::{Left, Right};
 
 /// The class for the scanner
 /// IP is data type IpAddr and is the IP address
@@ -31,6 +33,7 @@ pub struct Scanner {
     greppable: bool,
     port_strategy: PortStrategy,
     accessible: bool,
+    is_udp_port: bool,
 }
 
 impl Scanner {
@@ -42,6 +45,7 @@ impl Scanner {
         greppable: bool,
         port_strategy: PortStrategy,
         accessible: bool,
+        is_udp_port: bool,
     ) -> Self {
         Self {
             batch_size,
@@ -51,6 +55,7 @@ impl Scanner {
             port_strategy,
             ips: ips.iter().map(ToOwned::to_owned).collect(),
             accessible,
+            is_udp_port,
         }
     }
 
@@ -120,9 +125,14 @@ impl Scanner {
                         "Connection was successful, shutting down stream {}",
                         &socket
                     );
-                    if let Err(e) = x.shutdown(Shutdown::Both) {
-                        debug!("Shutdown stream error {}", &e);
-                    }
+                    match x {
+                        Left(udp_conn) => drop(udp_conn),
+                        Right(tcp_conn) => {
+                            if let Err(e) = tcp_conn.shutdown(Shutdown::Both) {
+                                debug!("Shutdown stream error {}", &e);
+                            }
+                        }
+                    };
                     if !self.greppable {
                         if self.accessible {
                             println!("Open {socket}");
@@ -150,6 +160,13 @@ impl Scanner {
         unreachable!();
     }
 
+    async fn connect(&self, socket: SocketAddr) -> io::Result<Either<UdpSocket, TcpStream>> {
+        match self.is_udp_port {
+            true => Ok(Left(self.connect_udp(socket).await?)),
+            false => Ok(Right(self.connect_tcp(socket).await?)),
+        }
+    }
+
     /// Performs the connection to the socket with timeout
     /// # Example
     ///
@@ -161,13 +178,16 @@ impl Scanner {
     ///     // returns Result which is either Ok(stream) for port is open, or Er for port is closed.
     ///     // Timeout occurs after self.timeout seconds
     ///
-    async fn connect(&self, socket: SocketAddr) -> io::Result<TcpStream> {
-        let stream = io::timeout(
+    async fn connect_tcp(&self, socket: SocketAddr) -> io::Result<TcpStream> {
+        io::timeout(
             self.timeout,
             async move { TcpStream::connect(socket).await },
         )
-        .await?;
-        Ok(stream)
+        .await
+    }
+
+    async fn connect_udp(&self, socket: SocketAddr) -> io::Result<UdpSocket> {
+        io::timeout(self.timeout, async move { UdpSocket::bind(socket).await }).await
     }
 }
 
@@ -195,6 +215,7 @@ mod tests {
             true,
             strategy,
             true,
+            false,
         );
         block_on(scanner.run());
         // if the scan fails, it wouldn't be able to assert_eq! as it panicked!
@@ -217,6 +238,7 @@ mod tests {
             true,
             strategy,
             true,
+            false,
         );
         block_on(scanner.run());
         // if the scan fails, it wouldn't be able to assert_eq! as it panicked!
@@ -238,6 +260,7 @@ mod tests {
             true,
             strategy,
             true,
+            false,
         );
         block_on(scanner.run());
         assert_eq!(1, 1);
@@ -258,6 +281,7 @@ mod tests {
             true,
             strategy,
             true,
+            false,
         );
         block_on(scanner.run());
         assert_eq!(1, 1);
@@ -281,6 +305,7 @@ mod tests {
             true,
             strategy,
             true,
+            false,
         );
         block_on(scanner.run());
         assert_eq!(1, 1);
