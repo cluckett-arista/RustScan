@@ -141,7 +141,7 @@ pub struct Opts {
     #[structopt(last = true)]
     pub command: Vec<String>,
 
-    #[structopt(short, long)]
+    #[structopt(long)]
     pub is_udp_port: bool,
 }
 
