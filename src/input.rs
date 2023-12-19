@@ -31,6 +31,16 @@ arg_enum! {
     }
 }
 
+pub enum Protocol {
+    TCP,
+    UDP,
+}
+
+pub struct PortTuple {
+    pub protocol: Protocol,
+    pub port: u16,
+}
+
 /// Represents the range of ports to be scanned.
 #[derive(Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct PortRange {
