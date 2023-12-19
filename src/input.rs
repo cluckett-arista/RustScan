@@ -31,11 +31,13 @@ arg_enum! {
     }
 }
 
+#[derive(Deserialize, Debug, Clone, PartialEq, Eq)]
 pub enum Protocol {
     TCP,
     UDP,
 }
 
+#[derive(Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct PortTuple {
     pub protocol: Protocol,
     pub port: u16,
