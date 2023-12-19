@@ -89,7 +89,7 @@ pub struct Opts {
 
     /// A list of comma separated ports to be scanned. Example: 80,443,8080.
     #[structopt(short, long, use_delimiter = true)]
-    pub ports: Option<Vec<u16>>,
+    pub ports: Option<Vec<u16>>, // TODO: Convert to string and then parse
 
     /// A range of ports with format start-end. Example: 1-1000.
     #[structopt(short, long, conflicts_with = "ports", parse(try_from_str = parse_range))]
@@ -251,7 +251,7 @@ impl Config {
     /// # Format
     ///
     /// addresses = ["127.0.0.1", "127.0.0.1"]
-    /// ports = [80, 443, 8080]
+    /// ports = [80, 443, 8080, U:5353]
     /// greppable = true
     /// scan_order: "Serial"
     ///
